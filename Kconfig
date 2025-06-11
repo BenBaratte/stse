@@ -1,0 +1,19 @@
+config STSELIB
+	bool "STSELib Support"
+	default n
+	help
+	  Enable use of STSAFE-A secure element.
+
+config STSELIB_SHELL
+	bool "STSELib Shell Support"
+	default n
+	depends on STSELIB
+	help
+	  Enable use of STSAFE-A secure element.
+
+config MBEDTLS_STSELIB_TLS_CREDENTIAL
+	bool "STSELib MBedTLS TLS credential"
+	default n
+	depends on STSELIB
+	help
+		Add extra TLS credential management for STSELib
