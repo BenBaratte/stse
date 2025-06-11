@@ -53,5 +53,7 @@ crc16/crc16.c   )
 
 zephyr_include_directories_ifdef(CONFIG_STSELIB STSELib/)
 zephyr_include_directories_ifdef(CONFIG_STSELIB_SHELL STSELib_Shell/)
+zephyr_include_directories_ifdef(CONFIG_MBEDTLS ${ZEPHYR_MBEDTLS_MODULE_DIR}/include)
+
 
 
