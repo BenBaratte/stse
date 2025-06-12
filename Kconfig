@@ -17,3 +17,10 @@ config MBEDTLS_STSELIB_TLS_CREDENTIAL
 	depends on STSELIB
 	help
 		Add extra TLS credential management for STSELib
+
+config STSELIB_A120
+	bool "Use STSAFE-A120 with STSELib"
+	default n
+	depends on STSELIB
+	help
+		Enable STSAFE-A120 support 

@@ -1,5 +1,4 @@
 #include "stselib_mbedtls.h"
-#include "zephyr/shell/shell.h"
 #include "print_utils.h"
 #include "stdarg.h"
 
@@ -8,29 +7,6 @@
 
 // global handle to get that is used when the stsafe_sign_wrap is called therefore we don't need to modify the mbedtls context structure to pass the handle to the signature function
 stse_Handler_t *g_se_handle = NULL;
-
-
-
-#define LOG_MBEDTLS_STSAFE(__slot__, __type__, __api__) {\
-                                                          stsafe_trace_t trace = { .mbedtls=1, .slot_and_type = __type__ + __slot__, .API = __api__};\
-                                                          trace_stsafe(&trace);\
-                                                        }
-
-char print_buffer[50];
-
-const struct shell *g_sh = NULL;
-
-void stse_mbedtls_set_trace_ctx(const struct shell *sh)
-{
-    g_sh = sh;
-}
-
-static uint32_t print_state = 0;
-void mbedtls_stsafe_set_state(uint32_t state)
-{
-  print_state = state; 
-}
-
 
 typedef enum
 {
@@ -50,6 +26,34 @@ typedef enum
   STSAFE_SYM_KEY = 0x20,
   STSAFE_NONE = 0x30,
 } stsafe_slot_type_t;
+
+const struct shell *g_sh = NULL;
+
+void stse_mbedtls_set_trace_ctx(const struct shell *sh)
+{
+    g_sh = sh;
+}
+
+#ifdef STSELIB_MBEDTLS_DEBUG
+
+
+#define LOG_MBEDTLS_STSAFE(__slot__, __type__, __api__) {\
+                                                          stsafe_trace_t trace = { .mbedtls=1, .slot_and_type = __type__ + __slot__, .API = __api__};\
+                                                          trace_stsafe(&trace);\
+                                                        }
+
+char print_buffer[50];
+
+
+
+static uint32_t print_state = 0;
+void mbedtls_stsafe_set_state(uint32_t state)
+{
+  print_state = state; 
+}
+
+
+
 
 typedef struct
 {
@@ -102,7 +106,9 @@ void trace_stsafe(stsafe_trace_t *trace)
 {
     print_trace(trace);
 }
-
+#else
+#define LOG_MBEDTLS_STSAFE(__slot__, __type__, __api__)
+#endif
 
 
 // when using private key slot 1, as this is user generated key, both public key and key size shall be managed by the application

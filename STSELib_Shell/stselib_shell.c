@@ -7,6 +7,11 @@
 #include <zephyr/net/socket.h>
 #include <zephyr/net/tls_credentials.h>
 #include <zephyr/net/socketutils.h>
+#include <zephyr/posix/posix_features.h>
+
+#if defined (CONFIG_STSELIB_A120)
+#define STSAFE_A120
+#endif
 
 #if defined (CONFIG_STSELIB_SHELL)
 
@@ -15,16 +20,17 @@
 stse_Handler_t stsafe_handle;
 stse_session_t stse_session;
 
+#ifdef STSAFE_A120
 static stsafea_aes_256_host_keys_t hosts_keys_256 = { 
     .host_mac_key    = { 0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99, 0xAA, 0xBB, 0xCC, 0xDD, 0xEE, 0xFF, 0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99, 0xAA, 0xBB, 0xCC, 0xDD, 0xEE, 0xFF},
     .host_cipher_key = { 0x01, 0x23, 0x45, 0x67, 0x89, 0xAB, 0xCD, 0xEF, 0x01, 0x23, 0x45, 0x67, 0x89, 0xAB, 0xCD, 0xEF, 0x01, 0x23, 0x45, 0x67, 0x89, 0xAB, 0xCD, 0xEF, 0x01, 0x23, 0x45, 0x67, 0x89, 0xAB, 0xCD, 0xEF}
   };
-
+#else
 static stsafea_aes_128_host_keys_t hosts_keys_128 = { 
     .host_mac_key    = { 0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99, 0xAA, 0xBB, 0xCC, 0xDD, 0xEE, 0xFF},
     .host_cipher_key = { 0x11, 0x11, 0x22, 0x22, 0x33, 0x33, 0x44, 0x44, 0x55, 0x55, 0x66, 0x66, 0x77, 0x77, 0x88, 0x88}
   };
-
+#endif
 
 stse_Handler_t* stsafe_init(const struct shell *sh)
 {  
@@ -52,7 +58,7 @@ stse_Handler_t* stsafe_init(const struct shell *sh)
   stse_hkp_ctrl.plaintext = 1;
   stse_hkp_ctrl.reprovision = 1;
   stse_hkp_ctrl.wrapped_anonymous = 1;
-  stse_hkp_ctrl.wrapped_authentication_key = 0xFF;
+  stse_hkp_ctrl.wrapped_or_DH_derived_authentication_key = 0xFF;
 
   PRINT_LOG("stsafea_put_host_key_provisioning_ctrl_fiels : ");
   fflush(stdout);
@@ -69,7 +75,7 @@ stse_Handler_t* stsafe_init(const struct shell *sh)
   PRINT_LOG(P_C(GREEN, "ok") ENDL); 
   PRINT_LOG("stse_host_key_provisioning :");
   fflush(stdout);
-  status = stse_host_key_provisioning(&stsafe_handle, STSAFEA_AES_256_HOST_KEY, (stsafea_host_keys_t*)&hosts_keys);
+  status = stse_host_key_provisioning(&stsafe_handle, STSAFEA_AES_256_HOST_KEY, (stsafea_host_keys_t*)&hosts_keys_256);
   if (status != STSE_OK)
   {
     PRINT_LOG(P_C(RED, "failed") "ret = %04x" ENDL, status);
@@ -208,11 +214,6 @@ static int cmd_stselib_init(const struct shell *sh, size_t argc,
   {
     printf("Unable to set TLS CA cert %d"ENDL, ret);
   }
-  else
-  {
-    printf(".");
-  }
-
 
   ret = stse_get_device_certificate_size(stse_h, 0, &size);
 	if ((ret == STSE_OK) && (size > 4))
@@ -228,10 +229,6 @@ static int cmd_stselib_init(const struct shell *sh, size_t argc,
     {
       printf("Unable to set TLS client cert %d"ENDL, ret);
     }
-    else
-    {
-      printf(".");
-    }
   }
 
 #ifdef CONFIG_MBEDTLS_STSELIB_TLS_CREDENTIAL
@@ -239,10 +236,6 @@ static int cmd_stselib_init(const struct shell *sh, size_t argc,
   if (ret != 0)
     {
       printf("Unable to set STSELib TLS Key %d"ENDL, ret);
-    }
-    else
-    {
-      printf(".");
     }
 #endif
 	return 0;
@@ -438,7 +431,7 @@ static int get_http_length(char *buf, unsigned int size, int *header_end, int *c
 }
 
 
-int fetch_http_response_sock(int *socket, char *buf, size_t len, size_t *content_size, char **payload_start, int *connection_status)
+int fetch_http_response_sock(int socket, char *buf, size_t len, size_t *content_size, char **payload_start, int *connection_status)
 {
   int ret = -1;
   char *seek = buf;
@@ -448,7 +441,7 @@ int fetch_http_response_sock(int *socket, char *buf, size_t len, size_t *content
   int retry = 3;
 
   do {
-      ret = recv(socket, (unsigned char*)seek, len, 0);
+      ret = zsock_recv(socket, (unsigned char*)seek, len, 0);
 
 
       if (ret < 0) {
@@ -471,9 +464,7 @@ int fetch_http_response_sock(int *socket, char *buf, size_t len, size_t *content
 
       len -= ret;
       read += ret;
-      
-      printf(GREEN" %d bytes read"NC, ret);
-      //PRINT_LOG("\n\n%s", (char *) seek);
+
       /* check header for more bytes */
       if (content_length == -1)
       {
@@ -484,7 +475,7 @@ int fetch_http_response_sock(int *socket, char *buf, size_t len, size_t *content
       {
         if ((content_length + offset) == read)
         {
-          printf(ENDL"Content-Length = %d header end = %d"ENDL, content_length, offset);
+          //printf(ENDL"Content-Length = %d header end = %d"ENDL, content_length, offset);
           ret = read;
           break;
         }
@@ -514,7 +505,7 @@ static int cmd_stselib_connect(const struct shell *sh, size_t argc,
     };
 
     char *host= "STM Demo Applicative Server 01";
-    int fd = socket(AF_INET, SOCK_STREAM, IPPROTO_TLS_1_2);
+    int fd = zsock_socket(AF_INET, SOCK_STREAM, IPPROTO_TLS_1_2);
     int ret;
     struct sockaddr_in iaddr;
     size_t len;
@@ -527,25 +518,12 @@ static int cmd_stselib_connect(const struct shell *sh, size_t argc,
     iaddr.sin_port = port;
     iaddr.sin_family = AF_INET;
 
-    ret = setsockopt(fd, SOL_TLS, TLS_SEC_TAG_LIST,
+    printf("Configuring Socket : ");
+    ret = zsock_setsockopt(fd, SOL_TLS, TLS_SEC_TAG_LIST,
                  sec_tag_opt, sizeof(sec_tag_opt));
     if (ret != 0)
     {
-      printf("Unable to set sock tag list %d"ENDL, ret);
-    }
-    else
-    {
-      printf(".");
-    }
-
-    ret = setsockopt(fd, SOL_TLS, TLS_HOSTNAME, url, strlen(url));
-    if (ret != 0)
-    {
-      printf("Unable to set TLS hostname %d"ENDL, ret);
-    }
-    else
-    {
-      printf(".");
+      printf(P_C(RED,"KO") "Unable to set sock tag list %d"ENDL, ret);
     }
 
     int tls_native = 1;
@@ -553,61 +531,64 @@ static int cmd_stselib_connect(const struct shell *sh, size_t argc,
     /* The socket is "dispatched" to a native TLS socket implmeentation.
     * The underlying socket is a "dispatcher" socket now.
     */
-    ret = setsockopt(fd, SOL_TLS, TLS_NATIVE, &tls_native, sizeof(tls_native));
+    ret = zsock_setsockopt(fd, SOL_TLS, TLS_NATIVE, &tls_native, sizeof(tls_native));
     if (ret != 0)
     {
-      printf("Unable to set native tls socket %d"ENDL, ret);
+      printf(P_C(RED,"KO") "Unable to set native tls socket %d"ENDL, ret);
     }
-    else
-    {
-      printf(".");
-    }
+
     struct ifreq ifreq = {
-        .ifr_name = "offloaded_1"
+        .ifr_name = "com_socket"
     };
 
     /* The underlying socket is "dispatched" to a particular network interface
     * (offloaded or not).
     */
-    ret = setsockopt(fd, SOL_SOCKET, SO_BINDTODEVICE, &ifreq, sizeof(ifreq));
+    ret = zsock_setsockopt(fd, SOL_SOCKET, SO_BINDTODEVICE, &ifreq, sizeof(ifreq));
     if (ret != 0)
     {
-      printf("Unable to bind socket to interface offloaded_1 %d"ENDL, ret);
+      printf(P_C(RED,"KO") "Unable to bind socket to interface com_socket %d"ENDL, ret);
     }
-    else
-    {
-      printf(".");
-    }
-    ret = setsockopt(fd, SOL_TLS, TLS_HOSTNAME, host, strlen(host));
 
-    ret = connect(fd, (const struct sockaddr*)&iaddr, sizeof(struct sockaddr_in));
+    ret = zsock_setsockopt(fd, SOL_TLS, TLS_HOSTNAME, host, strlen(host));
+    if (ret != 0)
+    {
+      printf(P_C(RED,"KO") "Unable to set host name to socket %d"ENDL, ret);
+    }
+    printf(P_C(GREEN, "OK") ENDL "Connecting : ");
+
+    ret = zsock_connect(fd, (const struct sockaddr*)&iaddr, sizeof(struct sockaddr_in));
     if (ret == 0)
     {
+        printf(P_C(GREEN, "OK") ENDL);
         printf("Writting socket : ");
         len = create_http_request(url, argv[2], buf, 0, "id");
-        ret = send(fd, buf, len, 0);
+        ret = zsock_send(fd, buf, len, 0);
         if (ret > 0)
         {
           size_t content_size;
           char *payload_start;
-          printf("OK" ENDL);
+          printf(P_C(GREEN ,"OK") ENDL);
           printf("Reading socket : ");
           ret = fetch_http_response_sock(fd, buf, sizeof(buf), &content_size, &payload_start, &connection);
           if (ret < 0)
           {
-            PRINT_LOG("Unable to fetch response error %x"ENDL, -ret);
-            return 0;
+            printf("Unable to fetch response error %x"ENDL, -ret);
+            goto close;
           }
-          PRINT_LOG("fetch http response of %d bytes"ENDL, ret);
 
-          PRINT_LOG("Server Response : "ENDL "%s"ENDL, buf);
+          printf(P_C(GREEN, "OK") ENDL "fetch http response of %d bytes"ENDL, ret);
+
+          printf("Server Response : "ENDL "%s"ENDL, buf);
         }
     }
     else
     {
-      printf("Unable to connect" ENDL);
+      printf(P_C(RED, "KO") " %d Unable to connect" ENDL, ret);
     }
+close:
     zsock_close(fd);
+end:
     return 0;
 }
 

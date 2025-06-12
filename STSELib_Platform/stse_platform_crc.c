@@ -2,6 +2,7 @@
 #include "stselib.h"
 #include <stdlib.h>
 #include <zephyr/kernel.h>
+#include "crc16.h"
 
 stse_ReturnCode_t stse_platform_crc16_init(void)
 {
