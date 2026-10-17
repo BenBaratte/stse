@@ -1,8 +1,24 @@
 config STSELIB
 	bool "STSELib Support"
 	default n
+	imply PSA_CRYPTO
 	help
 	  Enable use of STSAFE-A secure element.
+
+	  The platform crypto layer uses PSA Crypto. Depending on the STSELib
+	  features enabled in stse_conf.h, the application needs:
+	  PSA_WANT_ALG_SHA_256 / SHA_384 (hash, certificates),
+	  PSA_WANT_ALG_ECDSA, PSA_WANT_ECC_SECP_R1_256 / 384,
+	  PSA_WANT_KEY_TYPE_ECC_KEY_PAIR_GENERATE / IMPORT / EXPORT and
+	  PSA_WANT_ALG_ECDH (host key establishment),
+	  PSA_WANT_ALG_HKDF, HKDF_EXTRACT, HKDF_EXPAND (key derivation),
+	  PSA_WANT_ALG_CMAC, CBC_NO_PADDING, ECB_NO_PADDING (host session).
+
+if STSELIB
+module = STSELIB
+module-str = STSELib
+source "subsys/logging/Kconfig.template.log_config"
+endif
 
 config STSELIB_SHELL
 	bool "STSELib Shell Support"

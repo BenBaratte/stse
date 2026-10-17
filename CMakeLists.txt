@@ -1,3 +1,7 @@
+# STSELib (STSAFE-A secure element library) and its Zephyr platform layer.
+# The application provides stse_conf.h and stse_platform_generic.h in an include path
+# (zephyr_include_directories) and the "i2c-0" devicetree alias of the STSAFE bus.
+
 zephyr_sources_ifdef(CONFIG_STSELIB
 STSELib/services/stsafea/stsafea_sessions.c
 STSELib/services/stsafea/stsafea_echo.c
@@ -39,7 +43,7 @@ STSELib/api/stse_data_storage.c
 STSELib/api/stse_mac.c
 STSELib/api/stse_device_management.c
 STSELib/api/stse_random.c
-STSELib/api/stse_ecc.c 
+STSELib/api/stse_ecc.c
 STSELib_Platform/stse_platform_i2c.c
 STSELib_Platform/stse_platform_crypto.c
 STSELib_Platform/stse_platform_aes.c
@@ -47,13 +51,16 @@ STSELib_Platform/stse_platform_power.c
 STSELib_Platform/stse_platform_delay.c
 STSELib_Platform/stse_platform_crc.c
 STSELib_Platform/stse_platform_random.c
-STSELib_Shell/stselib_shell.c
-STSELib_Shell/stselib_mbedtls.c
-crc16/crc16.c   )
+crc16/crc16.c
+)
+
+# Optional shell and TLS credential glue (they need extra headers and a patched Zephyr)
+zephyr_sources_ifdef(CONFIG_STSELIB_SHELL STSELib_Shell/stselib_shell.c)
+zephyr_sources_ifdef(CONFIG_MBEDTLS_STSELIB_TLS_CREDENTIAL STSELib_Shell/stselib_mbedtls.c)
 
 zephyr_include_directories_ifdef(CONFIG_STSELIB STSELib/)
 zephyr_include_directories_ifdef(CONFIG_STSELIB_SHELL STSELib_Shell/)
-zephyr_include_directories_ifdef(CONFIG_STSELIB_SHELL crc16/)
+zephyr_include_directories_ifdef(CONFIG_STSELIB crc16/)
 zephyr_include_directories_ifdef(CONFIG_MBEDTLS ${ZEPHYR_MBEDTLS_MODULE_DIR}/include)
 
 
