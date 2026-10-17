@@ -137,13 +137,15 @@ stse_ReturnCode_t stse_platform_i2c_send_stop (
 	return ret;
 }
 
-PLAT_UI16 stse_platform_i2c_receive_start (
+stse_ReturnCode_t stse_platform_i2c_receive_start (
 		PLAT_UI8 busID,
 		PLAT_UI8 devAddr,
 		PLAT_UI16 speed,
-		PLAT_UI16 pFrame_Length)
+		PLAT_UI16 frame_Length)
 {
 	(void)busID;
+	(void)speed;
+	(void)frame_Length;
 	PLAT_UI8 stat_len[3];
 	PLAT_I8 ret = 0;
 
@@ -156,7 +158,6 @@ PLAT_UI16 stse_platform_i2c_receive_start (
 
 	/* - Store response Length */
 	i2c_frame_size = ((stat_len[1] << 8) + stat_len[2]) + STSE_RSP_FRAME_HEADER_SIZE + STSE_FRAME_CRC_SIZE;
-	pFrame_Length = i2c_frame_size;
 
 	/* - Check buffer overflow */
 	if (i2c_frame_size > sizeof(I2c_buffer)/sizeof(I2c_buffer[0]))
@@ -165,7 +166,7 @@ PLAT_UI16 stse_platform_i2c_receive_start (
 	}
 
 	/* - Read full Frame */
-	ret = i2c_read(i2c_dev,I2c_buffer,pFrame_Length, devAddr);
+	ret = i2c_read(i2c_dev,I2c_buffer,i2c_frame_size, devAddr);
 	if(ret != 0)
 	{
 		return STSE_PLATFORM_BUS_ERR;
