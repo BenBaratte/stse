@@ -17,6 +17,7 @@ STSELib/services/stsafea/stsafea_aes.c
 STSELib/services/stsafea/stsafea_commands.c
 STSELib/services/stsafea/stsafea_timings.c
 STSELib/services/stsafea/stsafea_data_partition.c
+STSELib/services/stsafea/stsafea_derive_keys.c
 STSELib/services/stsafea/stsafea_random.c
 STSELib/services/stsafea/stsafea_password.c
 STSELib/services/stsafea/stsafea_hash.c
@@ -40,6 +41,7 @@ STSELib/api/stse_aes.c
 STSELib/api/stse_asymmetric_keys_management.c
 STSELib/api/stse_symmetric_keys_management.c
 STSELib/api/stse_data_storage.c
+STSELib/api/stse_derive_keys.c
 STSELib/api/stse_mac.c
 STSELib/api/stse_device_management.c
 STSELib/api/stse_random.c

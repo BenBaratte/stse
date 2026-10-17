@@ -13,7 +13,7 @@ stse_ReturnCode_t stse_platform_delay_init(void)
 /**
  *
  */
-void stse_platform_Delay_ms (PLAT_UI32 delay_val)
+void stse_platform_Delay_ms (PLAT_UI16 delay_val)
 {
 	k_sleep(K_MSEC(delay_val));
 }

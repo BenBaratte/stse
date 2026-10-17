@@ -14,5 +14,6 @@ elements), with a Zephyr platform layer in `STSELib_Platform/`.
   `CONFIG_MBEDTLS_STSELIB_TLS_CREDENTIAL` (TLS credential glue, needs a patched Zephyr).
 - Log level: `CONFIG_STSELIB_LOG_LEVEL_*`.
 
-Tested on NUCLEO-H563ZI with an STSAFE-A120 (X-NUCLEO-ESE01A1), Zephyr 4.5.0-rc1:
+Tested with STSELib v1.1.11 on NUCLEO-H563ZI with an STSAFE-A120 (X-NUCLEO-ESE01A1),
+Zephyr 4.5.0-rc1:
 device info, certificate, ECDSA signature, host key establishment (ECDH + HKDF).

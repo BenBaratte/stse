@@ -175,7 +175,8 @@ stse_ReturnCode_t stse_platform_i2c_receive_start (
 	/* - reset read offset */
 	i2c_frame_offset = 0;
 
-	return (stat_len[0] & 0x3F);
+	/* The response status is checked by STSELib from the header byte */
+	return STSE_OK;
 }
 
 stse_ReturnCode_t stse_platform_i2c_receive_continue (
@@ -189,18 +190,19 @@ stse_ReturnCode_t stse_platform_i2c_receive_continue (
 	(void)devAddr;
 	(void)speed;
 
+	/* The frame is read as a byte stream: header, length, payload, CRC. STSELib reads
+	 * (or skips, pData == NULL) every field itself, including the length.
+	 */
+	if (i2c_frame_offset + data_size > i2c_frame_size)
+	{
+		return STSE_PLATFORM_BUFFER_ERR;
+	}
 	if (pData != NULL)
 	{
-		/* Ignore I2C length */
-		if(i2c_frame_offset == 1 )
-		{
-			i2c_frame_offset += 2;
-		}
-		/* Copy buffer content */
 		memcpy(pData,(I2c_buffer + i2c_frame_offset),data_size);
 	}
 	i2c_frame_offset += data_size;
-	return 0;
+	return STSE_OK;
 }
 
 stse_ReturnCode_t stse_platform_i2c_receive_stop (
@@ -215,10 +217,14 @@ stse_ReturnCode_t stse_platform_i2c_receive_stop (
 	(void) speed;
 
 	/*- Copy last element*/
+	if (i2c_frame_offset + data_size > i2c_frame_size)
+	{
+		return STSE_PLATFORM_BUFFER_ERR;
+	}
 	if (pData != NULL)
 	{
 		memcpy(pData,(I2c_buffer + i2c_frame_offset),data_size);
 	}
 
-	return 0;
+	return STSE_OK;
 }

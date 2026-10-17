@@ -64,8 +64,8 @@ PLAT_UI32 stse_platform_Random(void)
 }
 
 stse_ReturnCode_t stse_platform_hash_compute(stse_hash_algorithm_t hash_algo,
-					     PLAT_UI8 *pPayload, PLAT_UI32 payload_length,
-					     PLAT_UI8 *pHash, PLAT_UI32 *hash_length)
+					     PLAT_UI8 *pPayload, PLAT_UI16 payload_length,
+					     PLAT_UI8 *pHash, PLAT_UI16 *hash_length)
 {
 	psa_algorithm_t alg = hash_algo == STSE_SHA_256 ? PSA_ALG_SHA_256 :
 			      hash_algo == STSE_SHA_384 ? PSA_ALG_SHA_384 : 0;
